@@ -1,0 +1,22 @@
+# Java build output
+out/
+target/
+build/
+*.class
+
+# IDE and OS metadata
+.idea/
+*.iml
+.DS_Store
+
+# Generated submission archives
+OOP_Nhom05_QuanLyNganHang.zip
+
+# Keep course handouts and runtime data on the local machine
+.wiki/
+data/bank-data.json
+
+# Local secrets and configuration
+.env
+.env.*
+*.log
