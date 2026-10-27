@@ -1,0 +1,147 @@
+# UML Service – Factory – Repository — phần đã triển khai
+
+Sơ đồ phản ánh **5 interface, 5 implementation, 5 Simple Factory, ServiceSupport, JsonRepository và DI registry** đã có trong mã nguồn. Factory gọi trực tiếp `JsonRepository.getInstance()` và trả về interface; chưa có lựa chọn giữa nhiều implementation.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class AccountService {
+        <<interface>>
+        +createCustomer(String username, String fullName, String phone, String email, String address, char[] temporaryPassword) Customer
+        +findCustomer(String customerId) Customer
+        +updateCustomer(String customerId, String fullName, String phone, String email, String address) void
+        +resetCustomerPassword(String customerId, char[] temporaryPassword) void
+        +deactivateCustomer(String customerId) void
+        +authenticate(String username, char[] password) User
+        +changePassword(String userId, char[] oldPassword, char[] newPassword) void
+        +generateTemporaryPassword() char[]
+        +findAllCustomers() List~Customer~
+        +openCheckingAccount(String customerId) CheckingAccount
+        +findByAccountNumber(String accountNumber) BankAccount
+        +findByCustomerId(String customerId) List~BankAccount~
+        +closeCheckingAccount(String accountNumber) void
+        +reopenCheckingAccount(String accountNumber) void
+    }
+
+    class TransactionService {
+        <<interface>>
+        +deposit(String accountNumber, BigDecimal amount) Transaction
+        +withdraw(String accountNumber, BigDecimal amount) Transaction
+        +transfer(String fromAccountNumber, String toAccountNumber, BigDecimal amount) Transaction
+        +findByAccountNumber(String accountNumber) List~Transaction~
+        +findByCustomerId(String customerId) List~Transaction~
+    }
+
+    class SavingsService {
+        <<interface>>
+        +openSavingsAccount(String customerId, BigDecimal amount, int termMonths) SavingsAccount
+        +settleSavingsAccount(String accountNumber) void
+        +settleMaturedSavings() void
+        +calculateInterest(String accountNumber, LocalDate date) BigDecimal
+    }
+
+    class LoanService {
+        <<interface>>
+        +openLoanAccount(String customerId, BigDecimal amount, BigDecimal annualRate, LocalDate endDate) LoanAccount
+        +repayLoanAccount(String accountNumber) void
+        +calculateInterest(String accountNumber) BigDecimal
+        +calculateTotalDue(String accountNumber) BigDecimal
+    }
+
+    class ReportService {
+        <<interface>>
+        +generateAccountReport() String
+        +generateTransactionReport(LocalDate fromDate, LocalDate toDate) String
+        +generateTodayTransactionReport() String
+    }
+
+    class AccountServiceImpl
+    class TransactionServiceImpl
+    class SavingsServiceImpl
+    class LoanServiceImpl
+    class ReportServiceImpl
+    class ServiceSupport {
+        <<internal>>
+    }
+
+    class AccountServiceFactory {
+        -AccountServiceFactory()
+        +create() AccountService
+    }
+    class TransactionServiceFactory {
+        -TransactionServiceFactory()
+        +create() TransactionService
+    }
+    class SavingsServiceFactory {
+        -SavingsServiceFactory()
+        +create() SavingsService
+    }
+    class LoanServiceFactory {
+        -LoanServiceFactory()
+        +create() LoanService
+    }
+    class ReportServiceFactory {
+        -ReportServiceFactory()
+        +create() ReportService
+    }
+
+    class JsonRepository {
+        <<Singleton>>
+        -JsonRepository INSTANCE
+        -JsonRepository()
+        +getInstance() JsonRepository
+        +load() void
+        +reload() void
+        +save() void
+        +getUsers() List~User~
+        +getTransactions() List~Transaction~
+    }
+
+    AccountServiceImpl ..|> AccountService
+    TransactionServiceImpl ..|> TransactionService
+    SavingsServiceImpl ..|> SavingsService
+    LoanServiceImpl ..|> LoanService
+    ReportServiceImpl ..|> ReportService
+
+    AccountServiceImpl --> JsonRepository
+    TransactionServiceImpl --> JsonRepository
+    SavingsServiceImpl --> JsonRepository
+    LoanServiceImpl --> JsonRepository
+    ReportServiceImpl --> JsonRepository
+
+    AccountServiceImpl ..> ServiceSupport
+    TransactionServiceImpl ..> ServiceSupport
+    SavingsServiceImpl ..> ServiceSupport
+    LoanServiceImpl ..> ServiceSupport
+    ReportServiceImpl ..> ServiceSupport
+
+    AccountServiceFactory ..> AccountServiceImpl : creates
+    TransactionServiceFactory ..> TransactionServiceImpl : creates
+    SavingsServiceFactory ..> SavingsServiceImpl : creates
+    LoanServiceFactory ..> LoanServiceImpl : creates
+    ReportServiceFactory ..> ReportServiceImpl : creates
+
+    AccountServiceFactory ..> JsonRepository
+    TransactionServiceFactory ..> JsonRepository
+    SavingsServiceFactory ..> JsonRepository
+    LoanServiceFactory ..> JsonRepository
+    ReportServiceFactory ..> JsonRepository
+
+    class DI {
+        -Map~Class, Object~ dependencies
+        +register(Class type, Object instance) void
+        +get(Class type) Object
+        +createDefault() DI
+    }
+
+    DI ..> AccountServiceFactory : registers
+    DI ..> TransactionServiceFactory : registers
+    DI ..> SavingsServiceFactory : registers
+    DI ..> LoanServiceFactory : registers
+    DI ..> ReportServiceFactory : registers
+
+    note for ReportService "generateTodayTransactionReport is a default method"
+```
+
+Các Factory có `create()` không tham số, lấy Singleton `JsonRepository.getInstance()` bên trong và truyền cho constructor của implementation. `ServiceSupport` chỉ là helper nội bộ package (tra cứu dữ liệu, kiểm tra điều kiện, sinh mã, lưu và khôi phục khi ghi thất bại); không phải tầng/service thứ sáu. `DI.createDefault()` chỉ đăng ký 5 service qua Factory; Repository đã là Singleton nên các Factory lấy trực tiếp từ `JsonRepository.getInstance()`; `DI.get()` chỉ lấy lại instance đã lưu, không tạo mới. Phải gọi `JsonRepository.load()` trước nghiệp vụ. Chữ ký service chưa nhận người đang thao tác nên kiểm tra quyền theo vai trò chưa hoàn thiện.

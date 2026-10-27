@@ -1,0 +1,83 @@
+# UML Model — bản rút gọn
+
+Sơ đồ tập trung vào model, kế thừa, Composition `Customer`–`BankAccount` và các liên kết giao dịch. Đã lược bớt enum, getter/setter và một số phương thức để dễ đọc; xem [sơ đồ tổng hợp](class-diagram-current.md) để đối chiếu chi tiết.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class User {
+        <<abstract>>
+        -String userId
+        -String username
+        -String passwordHash
+        -UserStatus status
+        -boolean mustChangePassword
+        +getRole() UserRole
+    }
+
+    class Customer {
+        -String customerId
+        -String fullName
+        -String phone
+        -String email
+        -String address
+        -List~BankAccount~ accounts
+    }
+
+    class Employee
+
+    class BankAccount {
+        <<abstract>>
+        -String accountNumber
+        -String customerId
+        -BigDecimal balance
+        -AccountStatus status
+        +getAccountType() AccountType
+    }
+
+    class CheckingAccount {
+        +deposit(amount)
+        +withdraw(amount)
+        +close()
+        +reopen()
+    }
+
+    class SavingsAccount {
+        -int termMonths
+        -BigDecimal annualRate
+        -BigDecimal earlyWithdrawalRate
+        -LocalDate startDate
+        -LocalDate endDate
+        +calculateInterest(onDate) BigDecimal
+    }
+
+    class LoanAccount {
+        -BigDecimal annualRate
+        -LocalDate startDate
+        -LocalDate endDate
+        +calculateInterest() BigDecimal
+        +calculateTotalDue() BigDecimal
+    }
+
+    class Transaction {
+        -String transactionId
+        -BigDecimal amount
+        -String fromAccountNumber
+        -String toAccountNumber
+        -TransactionType type
+        -LocalDateTime occurredAt
+        -String note
+    }
+
+    User <|-- Customer
+    User <|-- Employee
+
+    BankAccount <|-- CheckingAccount
+    BankAccount <|-- SavingsAccount
+    BankAccount <|-- LoanAccount
+
+    Customer "1" *-- "0..*" BankAccount : accounts
+    Transaction "0..*" --> "0..1" BankAccount : fromAccountNumber
+    Transaction "0..*" --> "0..1" BankAccount : toAccountNumber
+```
