@@ -1,7 +1,29 @@
 classDiagram
-    direction TB
+    direction LR
 
-    namespace USER {
+    class Main {
+        +main(String[] args) void$
+    }
+    class BankWindow {
+        +BankWindow(DI di)
+        +launch(DI di) void$
+    }
+    class EmployeePanel
+    class CustomerPanel
+    class UiTools
+
+    class DI {
+        <<Singleton>>
+        -DI instance$
+        -Map~Class, Object~ dependencies
+        -DI()
+        +getInstance() DI$
+        -register(Class type, Object instance) void
+        +get(Class type) Object
+    }
+    class DemoData {
+        +initialize(JsonRepository repository) void$
+    }
 
     class User {
         <<abstract>>
@@ -9,109 +31,72 @@ classDiagram
         -String username
         -String passwordHash
         -UserStatus status
-        -boolean mustChangePassword
-        +changePassword(currentPassword, newPassword)
-        +resetPassword(temporaryPassword)
-        +deactivate()
+        +deactivate() void
         +getRole() UserRole*
     }
-
     class Customer {
         -String customerId
-        -String fullName
-        -String phone
-        -String email
-        -String address
         -List~BankAccount~ accounts
-        +updateContactInfo(phone, email, address)
-        +changeName(fullName)
+        +addAccount(BankAccount account) void
+        +deactivate() void
         +getRole() UserRole
     }
-
     class Employee {
         +getRole() UserRole
     }
-
-    class UserStatus {
-        <<enumeration>>
-        ACTIVE
-        INACTIVE
-    }
-
-    class UserRole {
-        <<enumeration>>
-        EMPLOYEE
-        CUSTOMER
-    }
-
-    }
-
-    namespace ACCOUNT {
-
     class BankAccount {
         <<abstract>>
         -String accountNumber
         -String customerId
         -BigDecimal balance
         -AccountStatus status
-        +getBalance() BigDecimal
         +getAccountType() AccountType*
     }
-
     class CheckingAccount {
-        +deposit(amount)
-        +withdraw(amount)
-        +close()
-        +reopen()
+        +deposit(BigDecimal amount) void
+        +withdraw(BigDecimal amount) void
+        +close() void
+        +reopen() void
         +getAccountType() AccountType
     }
-
     class SavingsAccount {
-        -int termMonths
-        -BigDecimal annualRate
-        -BigDecimal earlyWithdrawalRate
-        -LocalDate startDate
-        -LocalDate endDate
-        +calculateInterest(onDate) BigDecimal
+        +calculateInterest(LocalDate onDate) BigDecimal
+        +settle(LocalDate onDate) BigDecimal
         +getAccountType() AccountType
     }
-
     class LoanAccount {
-        -BigDecimal annualRate
-        -LocalDate startDate
-        -LocalDate endDate
         +calculateInterest() BigDecimal
-        +calculateTotalDue() BigDecimal
+        +repay() BigDecimal
         +getAccountType() AccountType
     }
-
-    class AccountStatus {
+    class Transaction {
+        -String transactionId
+        -TransactionType type
+        -BigDecimal amount
+        -String fromAccountNumber
+        -String toAccountNumber
+    }
+    class UserRole {
+        <<enumeration>>
+        CUSTOMER
+        EMPLOYEE
+    }
+    class UserStatus {
         <<enumeration>>
         ACTIVE
         INACTIVE
     }
-
     class AccountType {
         <<enumeration>>
         CHECKING
         SAVINGS
         LOAN
     }
-
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
     }
-
-    namespace TRANSACTION {
-
-    class Transaction {
-        -String transactionId
-        -BigDecimal amount
-        -String fromAccountNumber
-        -String toAccountNumber
-        -TransactionType type
-        -LocalDateTime occurredAt
-        -String note
-    }
-
     class TransactionType {
         <<enumeration>>
         DEPOSIT
@@ -123,136 +108,123 @@ classDiagram
         LOAN_REPAYMENT
     }
 
-    }
-
-    namespace SERVICE {
-
     class AccountService {
         <<interface>>
-        +openCheckingAccount(customerId) CheckingAccount
-        +findByAccountNumber(accountNumber) BankAccount
+        +authenticate(username, password) User
+        +changePassword(...) void
+        +createCustomer(...) Customer
+        +findAllCustomers() List~Customer~
         +findByCustomerId(customerId) List~BankAccount~
-        +closeCheckingAccount(accountNumber)
-        +reopenCheckingAccount(accountNumber)
     }
-
-    class AccountServiceImpl
-
     class TransactionService {
         <<interface>>
-        +deposit(accountNumber, amount) Transaction
-        +withdraw(accountNumber, amount) Transaction
-        +transfer(fromAccountNumber, toAccountNumber, amount) Transaction
+        +deposit(number, amount) Transaction
+        +withdraw(number, amount) Transaction
+        +transfer(...) Transaction
+        +findByCustomerId(customerId) List~Transaction~
     }
-
-    class TransactionServiceImpl
-
     class SavingsService {
         <<interface>>
-        +openSavingsAccount(customerId, amount, termMonths) SavingsAccount
-        +settleSavingsAccount(accountNumber) void
+        +openSavingsAccount(...) SavingsAccount
+        +settleSavingsAccount(number) void
         +settleMaturedSavings() void
+        +calculateInterest(number, date) BigDecimal
     }
-
-    class SavingsServiceImpl
-
     class LoanService {
         <<interface>>
-        +openLoanAccount(customerId, amount, annualRate, endDate) LoanAccount
-        +repayLoanAccount(accountNumber) void
+        +openLoanAccount(...) LoanAccount
+        +repayLoanAccount(number) void
+        +calculateInterest(number) BigDecimal
+        +calculateTotalDue(number) BigDecimal
     }
-
-    class LoanServiceImpl
-
     class ReportService {
         <<interface>>
         +generateAccountReport() String
-        +generateTransactionReport(fromDate, toDate) String
+        +generateTransactionReport(from, to) String
         +generateTodayTransactionReport() String
     }
 
+    class AccountServiceImpl
+    class TransactionServiceImpl
+    class SavingsServiceImpl
+    class LoanServiceImpl
     class ReportServiceImpl
-
-    }
-
-    namespace REPOSITORY {
-
+    class AccountServiceFactory
+    class TransactionServiceFactory
+    class SavingsServiceFactory
+    class LoanServiceFactory
+    class ReportServiceFactory
+    class ServiceSupport
     class JsonRepository {
         <<Singleton>>
         -JsonRepository INSTANCE$
-        -JsonRepository()
+        -List~User~ users
+        -List~Transaction~ transactions
         +getInstance() JsonRepository$
-        +load()
-        +save()
+        +load() void
+        +save() void
     }
 
-    }
-
-    namespace FACTORY {
-
-    class AccountServiceFactory {
-        -AccountServiceFactory()
-        +create(...) AccountService$
-    }
-
-    class TransactionServiceFactory {
-        -TransactionServiceFactory()
-        +create(...) TransactionService$
-    }
-
-    class SavingsServiceFactory {
-        -SavingsServiceFactory()
-        +create(...) SavingsService$
-    }
-
-    class LoanServiceFactory {
-        -LoanServiceFactory()
-        +create(...) LoanService$
-    }
-
-    class ReportServiceFactory {
-        -ReportServiceFactory()
-        +create(...) ReportService$
-    }
-
-    }
+    User <|-- Customer
+    User <|-- Employee
+    BankAccount <|-- CheckingAccount
+    BankAccount <|-- SavingsAccount
+    BankAccount <|-- LoanAccount
+    Customer "1" *-- "0..*" BankAccount : accounts
+    JsonRepository "1" o-- "0..*" User : users
+    JsonRepository "1" o-- "0..*" Transaction : transactions
+    Transaction ..> BankAccount : account numbers
+    User --> UserStatus
+    User ..> UserRole
+    BankAccount --> AccountStatus
+    BankAccount ..> AccountType
+    Transaction --> TransactionType
 
     AccountServiceImpl ..|> AccountService
     TransactionServiceImpl ..|> TransactionService
     SavingsServiceImpl ..|> SavingsService
     LoanServiceImpl ..|> LoanService
     ReportServiceImpl ..|> ReportService
-    AccountServiceFactory ..> AccountServiceImpl : tao mac dinh
-    TransactionServiceFactory ..> TransactionServiceImpl : tao mac dinh
-    SavingsServiceFactory ..> SavingsServiceImpl : tao mac dinh
-    LoanServiceFactory ..> LoanServiceImpl : tao mac dinh
-    ReportServiceFactory ..> ReportServiceImpl : tao mac dinh
-    AccountServiceFactory ..> JsonRepository : nhan dependency
-    TransactionServiceFactory ..> JsonRepository : nhan dependency
-    SavingsServiceFactory ..> JsonRepository : nhan dependency
-    LoanServiceFactory ..> JsonRepository : nhan dependency
-    ReportServiceFactory ..> JsonRepository : nhan dependency
-    AccountService ..> BankAccount : tra cứu
-    TransactionService ..> CheckingAccount : nộp/rút/chuyển
-    TransactionService ..> Transaction : ghi giao dịch
-    SavingsService ..> SavingsAccount : quản lý
-    LoanService ..> LoanAccount : quản lý
-    ReportService ..> BankAccount : thống kê tài khoản
-    ReportService ..> Transaction : thống kê giao dịch
-    note for ReportService "generateTodayTransactionReport() la default method"
 
-    User <|-- Customer
-    User <|-- Employee
-    User --> UserStatus : status
-    User ..> UserRole : getRole()
-    BankAccount <|-- CheckingAccount
-    BankAccount <|-- SavingsAccount
-    BankAccount <|-- LoanAccount
-    BankAccount --> AccountStatus : status
-    BankAccount ..> AccountType : getAccountType()
-    Customer "1" *-- "0..*" BankAccount : accounts
-    Transaction "0..*" --> "0..1" BankAccount : fromAccountNumber
-    Transaction "0..*" --> "0..1" BankAccount : toAccountNumber
-    Transaction --> TransactionType : type
-    note for Transaction "Tất toán: amount = gốc + lãi"
-    note for LoanAccount "Tối đa 1 ACTIVE/khách; không đóng tài khoản thanh toán khi còn nợ"
+    AccountServiceImpl --> JsonRepository
+    TransactionServiceImpl --> JsonRepository
+    SavingsServiceImpl --> JsonRepository
+    LoanServiceImpl --> JsonRepository
+    ReportServiceImpl --> JsonRepository
+    AccountServiceImpl ..> ServiceSupport
+    TransactionServiceImpl ..> ServiceSupport
+    SavingsServiceImpl ..> ServiceSupport
+    LoanServiceImpl ..> ServiceSupport
+    ReportServiceImpl ..> ServiceSupport
+
+    AccountServiceFactory ..> AccountServiceImpl
+    TransactionServiceFactory ..> TransactionServiceImpl
+    SavingsServiceFactory ..> SavingsServiceImpl
+    LoanServiceFactory ..> LoanServiceImpl
+    ReportServiceFactory ..> ReportServiceImpl
+    DI ..> AccountServiceFactory
+    DI ..> TransactionServiceFactory
+    DI ..> SavingsServiceFactory
+    DI ..> LoanServiceFactory
+    DI ..> ReportServiceFactory
+    DI ..> JsonRepository : load
+    DI ..> DemoData : first launch
+
+    Main ..> DI : getInstance
+    Main ..> BankWindow : launch
+    BankWindow ..> DI : get Services
+    BankWindow ..> AccountService : authenticate
+    BankWindow ..> EmployeePanel : signed-in employee
+    BankWindow ..> CustomerPanel : signed-in customer
+    EmployeePanel ..> AccountService
+    EmployeePanel ..> TransactionService
+    EmployeePanel ..> SavingsService
+    EmployeePanel ..> LoanService
+    EmployeePanel ..> ReportService
+    CustomerPanel ..> AccountService
+    CustomerPanel ..> TransactionService
+    CustomerPanel ..> SavingsService
+    CustomerPanel ..> LoanService
+    EmployeePanel ..> UiTools
+    CustomerPanel ..> UiTools
+    note for ReportService "generateTodayTransactionReport la default method"

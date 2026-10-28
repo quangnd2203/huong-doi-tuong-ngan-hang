@@ -33,7 +33,7 @@
 │   ├── DONG-GOI.md                # Danh mục sản phẩm nộp
 │   ├── bao-cao/                   # Bìa, mục lục và 5 chương
 │   └── screenshots/               # Ảnh chạy chương trình cho chương 4
-├── uml/                           # UML v1, v2 và class-diagram.png
+├── uml/                           # Ba sơ đồ Mermaid tổng hợp/Model/Service và bản ảnh cần tái xuất
 ├── src/main/java/vn/edu/pxu/bank/
 │   ├── Main.java                  # Điểm khởi chạy
 │   ├── model/
@@ -45,7 +45,7 @@
 │   ├── repository/                # JsonRepository Singleton, Gson, load/save một JSON
 │   ├── exception/                 # NotFoundException, InsufficientBalanceException
 │   ├── factory/                   # 5 Factory create() lấy JsonRepository Singleton
-│   ├── strategy/                  # Chính sách tính lãi/phí
+│   ├── strategy/                  # Thư mục dự phòng, chưa triển khai Strategy Pattern
 │   ├── util/                      # ValidationUtils, PasswordUtils (PBKDF2)
 │   └── ui/                        # Swing: BankWindow, EmployeePanel, CustomerPanel, demo
 ├── src/test/java/vn/edu/pxu/bank/  # Dành cho kiểm thử khi có mã nghiệp vụ
@@ -103,6 +103,10 @@ Menu lấy **mã trực tiếp từ dòng được nhấp**, kể cả khi sắp
 
 Để tránh classloader của `mvn exec:java` đóng trước khi Swing kết thúc, `BankWindow.launch()` giữ luồng khởi động đến khi cửa sổ được đóng. `Main` không quản lý luồng Swing. Hãy build và chạy lại khi thay đổi GUI.
 
+## UML và ảnh nộp
+
+Các nguồn Mermaid, bản Markdown và **6 ảnh PNG/SVG** (tổng hợp, Model, Service/DI) đã cập nhật theo mã Java. Xem [hướng dẫn UML](uml/README.md). Khi đưa vào báo cáo nên dùng SVG để hình lớn không mất nét.
+
 ## Bắt đầu làm
 
 1. Phạm vi đã chọn được ghi trong [mô tả đề tài](docs/MO-TA-DE-TAI.md); dàn trang một trang trước khi nộp M1.
@@ -112,4 +116,4 @@ Menu lấy **mã trực tiếp từ dòng được nhấp**, kể cả khi sắp
 
 Nguồn yêu cầu: `.wiki/01-Do-an-nhom.pptx`, đặc biệt slide 9–13, 20–23 và 26–30. Thông tin cá nhân lấy từ `.wiki/image.png`. Slide nhắc tới `DO-AN-NHOM.md` và `HUONG-DAN-VSCODE.md`, hiện hai file này chưa có trong `.wiki`.
 
-Yêu cầu cá nhân của dự án áp dụng cho bảng phân công. Các tiêu chí kỹ thuật và yêu cầu Git của slide vẫn được giữ để theo dõi. Theo lựa chọn của sinh viên, hiện làm local trước, chưa khởi tạo Git hoặc tạo repository GitHub.
+Yêu cầu cá nhân của dự án áp dụng cho bảng phân công. Các tiêu chí kỹ thuật và yêu cầu Git của slide vẫn được giữ để theo dõi. Lịch sử Git local được quản lý trong repository hiện tại; kiểm tra remote GitHub và số lượng commit trực tiếp bằng git log/git remote trước khi nộp.

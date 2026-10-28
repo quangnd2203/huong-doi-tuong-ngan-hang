@@ -1,6 +1,8 @@
-# UML Model — bản rút gọn
+# UML Model — đối chiếu mã nguồn Java
 
-Sơ đồ tập trung vào model, kế thừa, Composition `Customer`–`BankAccount` và các liên kết giao dịch. Đã lược bớt enum, getter/setter và một số phương thức để dễ đọc; xem [sơ đồ tổng hợp](class-diagram-current.md) để đối chiếu chi tiết.
+Lớp trừu tượng `User`, `BankAccount`; các lớp con, enum, thuộc tính và phương thức quan trọng. **Composition** `Customer–BankAccount` tương ứng `Customer.accounts` và kiểm tra `customerId` khi thêm tài khoản.
+
+`Transaction` chỉ lưu **số tài khoản nguồn/đích**; quan hệ nét đứt với `BankAccount` là phụ thuộc theo mã, không phải tham chiếu đối tượng hay Composition.
 
 ```mermaid
 classDiagram
@@ -13,7 +15,14 @@ classDiagram
         -String passwordHash
         -UserStatus status
         -boolean mustChangePassword
-        +getRole() UserRole
+        +getUserId() String
+        +getUsername() String
+        +getStatus() UserStatus
+        +isMustChangePassword() boolean
+        +changePassword(...) void
+        +resetPassword(String temporaryHash) void
+        +deactivate() void
+        +getRole() UserRole*
     }
 
     class Customer {
@@ -23,9 +32,20 @@ classDiagram
         -String email
         -String address
         -List~BankAccount~ accounts
+        +getAccounts() List~BankAccount~
+        +changeName(String fullName) void
+        +updateContactInfo(...) void
+        +setPhone(String phone) void
+        +setEmail(String email) void
+        +setAddress(String address) void
+        +addAccount(BankAccount account) void
+        +deactivate() void
+        +getRole() UserRole
     }
 
-    class Employee
+    class Employee {
+        +getRole() UserRole
+    }
 
     class BankAccount {
         <<abstract>>
@@ -33,14 +53,21 @@ classDiagram
         -String customerId
         -BigDecimal balance
         -AccountStatus status
-        +getAccountType() AccountType
+        +getAccountNumber() String
+        +getCustomerId() String
+        +getBalance() BigDecimal
+        +getStatus() AccountStatus
+        #setBalance(BigDecimal balance) void
+        #setStatus(AccountStatus status) void
+        +getAccountType() AccountType*
     }
 
     class CheckingAccount {
-        +deposit(amount)
-        +withdraw(amount)
-        +close()
-        +reopen()
+        +deposit(BigDecimal amount) void
+        +withdraw(BigDecimal amount) void
+        +close() void
+        +reopen() void
+        +getAccountType() AccountType
     }
 
     class SavingsAccount {
@@ -49,15 +76,21 @@ classDiagram
         -BigDecimal earlyWithdrawalRate
         -LocalDate startDate
         -LocalDate endDate
-        +calculateInterest(onDate) BigDecimal
+        +calculateInterest() BigDecimal
+        +calculateInterest(LocalDate onDate) BigDecimal
+        +settle(LocalDate onDate) BigDecimal
+        +getAccountType() AccountType
     }
 
     class LoanAccount {
         -BigDecimal annualRate
         -LocalDate startDate
         -LocalDate endDate
+        +getTermMonths() int
         +calculateInterest() BigDecimal
         +calculateTotalDue() BigDecimal
+        +repay() BigDecimal
+        +getAccountType() AccountType
     }
 
     class Transaction {
@@ -68,16 +101,57 @@ classDiagram
         -TransactionType type
         -LocalDateTime occurredAt
         -String note
+        +getTransactionId() String
+        +getType() TransactionType
+        +getAmount() BigDecimal
+        +getOccurredAt() LocalDateTime
+    }
+
+    class UserRole {
+        <<enumeration>>
+        CUSTOMER
+        EMPLOYEE
+    }
+    class UserStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+    }
+    class AccountType {
+        <<enumeration>>
+        CHECKING
+        SAVINGS
+        LOAN
+    }
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+    }
+    class TransactionType {
+        <<enumeration>>
+        DEPOSIT
+        WITHDRAWAL
+        TRANSFER
+        SAVINGS_OPEN
+        SAVINGS_SETTLEMENT
+        LOAN_DISBURSEMENT
+        LOAN_REPAYMENT
     }
 
     User <|-- Customer
     User <|-- Employee
-
     BankAccount <|-- CheckingAccount
     BankAccount <|-- SavingsAccount
     BankAccount <|-- LoanAccount
-
     Customer "1" *-- "0..*" BankAccount : accounts
-    Transaction "0..*" --> "0..1" BankAccount : fromAccountNumber
-    Transaction "0..*" --> "0..1" BankAccount : toAccountNumber
+    User ..> UserRole : getRole
+    User --> UserStatus : status
+    BankAccount ..> AccountType : getAccountType
+    BankAccount --> AccountStatus : status
+    Transaction --> TransactionType : type
+    Transaction ..> BankAccount : from/to account numbers
+    note for Transaction "Luu so tai khoan, khong giu tham chieu BankAccount"
 ```
+
+**Đa hình:** `Customer.getAccounts()` trả `List<BankAccount>` chứa Checking/Savings/Loan; báo cáo duyệt danh sách và gọi `getAccountType()` được override ở từng lớp con.

@@ -1,6 +1,6 @@
-# UML Service – Factory – Repository — phần đã triển khai
+# UML Service – Factory – Repository – DI (bản thực thi)
 
-Sơ đồ phản ánh **5 interface, 5 implementation, 5 Simple Factory, ServiceSupport, JsonRepository và DI registry** đã có trong mã nguồn. Factory gọi trực tiếp `JsonRepository.getInstance()` và trả về interface; chưa có lựa chọn giữa nhiều implementation.
+Sơ đồ đối chiếu **5 interface và 5 `Impl`**, `ServiceSupport`, năm **Simple Factory**, `JsonRepository` Singleton và `DI` Singleton. Factory có `create()` không tham số, tự lấy `JsonRepository.getInstance()`; không phải GoF Factory Method. **Các chữ ký dài được rút gọn tham số (ký hiệu `...`) để mỗi phương thức nằm trên một dòng; kiểu trả về và tên phương thức giữ nguyên.** Chữ ký đầy đủ nằm trong các interface Java ở `src/main/java/vn/edu/pxu/bank/service/`.
 
 ```mermaid
 classDiagram
@@ -8,89 +8,111 @@ classDiagram
 
     class AccountService {
         <<interface>>
-        +createCustomer(String username, String fullName, String phone, String email, String address, char[] temporaryPassword) Customer
-        +findCustomer(String customerId) Customer
-        +updateCustomer(String customerId, String fullName, String phone, String email, String address) void
-        +resetCustomerPassword(String customerId, char[] temporaryPassword) void
-        +deactivateCustomer(String customerId) void
-        +authenticate(String username, char[] password) User
-        +changePassword(String userId, char[] oldPassword, char[] newPassword) void
+        +authenticate(username, password) User
+        +changePassword(...) void
         +generateTemporaryPassword() char[]
+        +createCustomer(...) Customer
         +findAllCustomers() List~Customer~
-        +openCheckingAccount(String customerId) CheckingAccount
-        +findByAccountNumber(String accountNumber) BankAccount
-        +findByCustomerId(String customerId) List~BankAccount~
-        +closeCheckingAccount(String accountNumber) void
-        +reopenCheckingAccount(String accountNumber) void
+        +findCustomer(customerId) Customer
+        +updateCustomer(...) void
+        +resetCustomerPassword(...) void
+        +deactivateCustomer(customerId) void
+        +openCheckingAccount(customerId) CheckingAccount
+        +findByAccountNumber(number) BankAccount
+        +findByCustomerId(customerId) List~BankAccount~
+        +closeCheckingAccount(number) void
+        +reopenCheckingAccount(number) void
     }
 
     class TransactionService {
         <<interface>>
-        +deposit(String accountNumber, BigDecimal amount) Transaction
-        +withdraw(String accountNumber, BigDecimal amount) Transaction
-        +transfer(String fromAccountNumber, String toAccountNumber, BigDecimal amount) Transaction
-        +findByAccountNumber(String accountNumber) List~Transaction~
-        +findByCustomerId(String customerId) List~Transaction~
+        +findByAccountNumber(number) List~Transaction~
+        +findByCustomerId(customerId) List~Transaction~
+        +deposit(number, amount) Transaction
+        +withdraw(number, amount) Transaction
+        +transfer(...) Transaction
     }
 
     class SavingsService {
         <<interface>>
-        +openSavingsAccount(String customerId, BigDecimal amount, int termMonths) SavingsAccount
-        +settleSavingsAccount(String accountNumber) void
+        +openSavingsAccount(...) SavingsAccount
+        +settleSavingsAccount(number) void
         +settleMaturedSavings() void
-        +calculateInterest(String accountNumber, LocalDate date) BigDecimal
+        +calculateInterest(number, date) BigDecimal
     }
 
     class LoanService {
         <<interface>>
-        +openLoanAccount(String customerId, BigDecimal amount, BigDecimal annualRate, LocalDate endDate) LoanAccount
-        +repayLoanAccount(String accountNumber) void
-        +calculateInterest(String accountNumber) BigDecimal
-        +calculateTotalDue(String accountNumber) BigDecimal
+        +openLoanAccount(...) LoanAccount
+        +repayLoanAccount(number) void
+        +calculateInterest(number) BigDecimal
+        +calculateTotalDue(number) BigDecimal
     }
 
     class ReportService {
         <<interface>>
         +generateAccountReport() String
-        +generateTransactionReport(LocalDate fromDate, LocalDate toDate) String
+        +generateTransactionReport(from, to) String
         +generateTodayTransactionReport() String
     }
 
-    class AccountServiceImpl
-    class TransactionServiceImpl
-    class SavingsServiceImpl
-    class LoanServiceImpl
-    class ReportServiceImpl
-    class ServiceSupport {
-        <<internal>>
+    class AccountServiceImpl {
+        -JsonRepository repository
     }
-
+    class TransactionServiceImpl {
+        -JsonRepository repository
+    }
+    class SavingsServiceImpl {
+        -JsonRepository repository
+    }
+    class LoanServiceImpl {
+        -JsonRepository repository
+    }
+    class ReportServiceImpl {
+        -JsonRepository repository
+    }
+    class ServiceSupport {
+        <<utility>>
+    }
     class AccountServiceFactory {
-        -AccountServiceFactory()
-        +create() AccountService
+        +create() AccountService$
     }
     class TransactionServiceFactory {
-        -TransactionServiceFactory()
-        +create() TransactionService
+        +create() TransactionService$
     }
     class SavingsServiceFactory {
-        -SavingsServiceFactory()
-        +create() SavingsService
+        +create() SavingsService$
     }
     class LoanServiceFactory {
-        -LoanServiceFactory()
-        +create() LoanService
+        +create() LoanService$
     }
     class ReportServiceFactory {
-        -ReportServiceFactory()
-        +create() ReportService
+        +create() ReportService$
+    }
+
+    class DI {
+        <<Singleton>>
+        -DI instance$
+        -Map~Class, Object~ dependencies
+        -DI()
+        +getInstance() DI$
+        -register(Class type, Object instance) void
+        +get(Class type) Object
+    }
+
+    class DemoData {
+        +initialize(JsonRepository repository) void$
     }
 
     class JsonRepository {
         <<Singleton>>
-        -JsonRepository INSTANCE
+        -JsonRepository INSTANCE$
+        -Path file
+        -boolean loaded
+        -List~User~ users
+        -List~Transaction~ transactions
         -JsonRepository()
-        +getInstance() JsonRepository
+        +getInstance() JsonRepository$
         +load() void
         +reload() void
         +save() void
@@ -98,17 +120,25 @@ classDiagram
         +getTransactions() List~Transaction~
     }
 
+    class User
+    class Customer
+    class BankAccount
+    class CheckingAccount
+    class Transaction
+    class SavingsAccount
+    class LoanAccount
+
     AccountServiceImpl ..|> AccountService
     TransactionServiceImpl ..|> TransactionService
     SavingsServiceImpl ..|> SavingsService
     LoanServiceImpl ..|> LoanService
     ReportServiceImpl ..|> ReportService
 
-    AccountServiceImpl --> JsonRepository
-    TransactionServiceImpl --> JsonRepository
-    SavingsServiceImpl --> JsonRepository
-    LoanServiceImpl --> JsonRepository
-    ReportServiceImpl --> JsonRepository
+    AccountServiceImpl --> JsonRepository : uses
+    TransactionServiceImpl --> JsonRepository : uses
+    SavingsServiceImpl --> JsonRepository : uses
+    LoanServiceImpl --> JsonRepository : uses
+    ReportServiceImpl --> JsonRepository : uses
 
     AccountServiceImpl ..> ServiceSupport
     TransactionServiceImpl ..> ServiceSupport
@@ -122,26 +152,28 @@ classDiagram
     LoanServiceFactory ..> LoanServiceImpl : creates
     ReportServiceFactory ..> ReportServiceImpl : creates
 
-    AccountServiceFactory ..> JsonRepository
-    TransactionServiceFactory ..> JsonRepository
-    SavingsServiceFactory ..> JsonRepository
-    LoanServiceFactory ..> JsonRepository
-    ReportServiceFactory ..> JsonRepository
+    DI ..> JsonRepository : load at startup
+    DI ..> DemoData : seed first launch
+    DI ..> AccountServiceFactory : register
+    DI ..> TransactionServiceFactory : register
+    DI ..> SavingsServiceFactory : register
+    DI ..> LoanServiceFactory : register
+    DI ..> ReportServiceFactory : register
 
-    class DI {
-        -Map~Class, Object~ dependencies
-        +register(Class type, Object instance) void
-        +get(Class type) Object
-        +createDefault() DI
-    }
+    JsonRepository "1" o-- "0..*" User : users
+    JsonRepository "1" o-- "0..*" Transaction : transactions
 
-    DI ..> AccountServiceFactory : registers
-    DI ..> TransactionServiceFactory : registers
-    DI ..> SavingsServiceFactory : registers
-    DI ..> LoanServiceFactory : registers
-    DI ..> ReportServiceFactory : registers
+    AccountService ..> Customer
+    AccountService ..> BankAccount
+    TransactionService ..> Transaction
+    SavingsService ..> SavingsAccount
+    LoanService ..> LoanAccount
 
-    note for ReportService "generateTodayTransactionReport is a default method"
+    note for ReportService "generateTodayTransactionReport la default method"
 ```
 
-Các Factory có `create()` không tham số, lấy Singleton `JsonRepository.getInstance()` bên trong và truyền cho constructor của implementation. `ServiceSupport` chỉ là helper nội bộ package (tra cứu dữ liệu, kiểm tra điều kiện, sinh mã, lưu và khôi phục khi ghi thất bại); không phải tầng/service thứ sáu. `DI.createDefault()` chỉ đăng ký 5 service qua Factory; Repository đã là Singleton nên các Factory lấy trực tiếp từ `JsonRepository.getInstance()`; `DI.get()` chỉ lấy lại instance đã lưu, không tạo mới. Phải gọi `JsonRepository.load()` trước nghiệp vụ. Chữ ký service chưa nhận người đang thao tác nên kiểm tra quyền theo vai trò chưa hoàn thiện.
+`DI.getInstance()` là Singleton khởi tạo lười; constructor private nạp JSON, tạo dữ liệu demo lần đầu, tạo 5 Service qua Factory và tất toán tiết kiệm đến hạn. `register(...)` **private**, `get(Class<T>)` public; **không có `createDefault()`**.
+
+`JsonRepository` giữ `List<User>` và `List<Transaction>` trong bộ nhớ. Các đường **Aggregation** (hình thoi rỗng) mô tả tập hợp quản lý; lưu trữ lâu dài nằm ở JSON, không có vòng đời sở hữu chặt như Composition `Customer–BankAccount`. Repository **không** giữ `List<BankAccount>` cấp gốc.
+
+`ReportService.generateTodayTransactionReport()` là **default method**. API Service chưa nhận phiên đăng nhập nên phân quyền nghiệp vụ độc lập ở Service chưa hoàn thiện.
